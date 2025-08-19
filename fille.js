@@ -1,304 +1,158 @@
-/* app.js — logique complète : drag & drop, chiffrement AES-GCM, sauvegarde/restauration, PWA */
-"use strict";
-
-/* ===== Récup des éléments ===== */
-const dropArea = document.getElementById('dropArea');
-const pickBtn = document.getElementById('pickBtn');
-const fileInput = document.getElementById('fileInput');
-const fileListEl = document.getElementById('fileList');
-const saveBtn = document.getElementById('saveBtn');
-const saveEncBtn = document.getElementById('saveEncBtn');
-const clearBtn = document.getElementById('clearBtn');
-const overallBar = document.getElementById('overallBar');
-const statusEl = document.getElementById('status');
-const passwordInput = document.getElementById('password');
-const encPerFile = document.getElementById('encPerFile');
-const skipLarge = document.getElementById('skipLarge');
-const threshold = document.getElementById('threshold');
-
-const backupInput = document.getElementById('backupInput');
-const passwordDecrypt = document.getElementById('passwordDecrypt');
-const restoreBtn = document.getElementById('restoreBtn');
-const restoredList = document.getElementById('restoredList');
-const showMetaBtn = document.getElementById('showMetaBtn');
-
-let files = []; // {name,type,size,content:dataURL}
-
-/* ===== Utils ===== */
-function bytesToSize(bytes){
-  if(bytes===0) return '0 B';
-  const k=1024; const sizes=['B','KB','MB','GB','TB'];
-  const i=Math.floor(Math.log(bytes)/Math.log(k));
-  return parseFloat((bytes/Math.pow(k,i)).toFixed(2)) + ' ' + sizes[i];
-}
-function setProgress(pct, text){
-  overallBar.style.width = Math.min(100,Math.max(0,pct)) + '%';
-  if(text) statusEl.textContent = text;
-}
-function escapeHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function saveLocalMeta(){
-  const meta = {
-    createdAt:new Date().toISOString(),
-    count: files.length,
-    totalSize: files.reduce((s,f)=>s+f.size,0),
-    names: files.map(f=>f.name)
-  };
-  localStorage.setItem('last_backup_meta', JSON.stringify(meta));
+// ---------------- UTILS ----------------
+function log(msg) {
+  const logEl = document.getElementById("log");
+  logEl.innerHTML += `<p>${msg}</p>`;
 }
 
-/* ===== Rendu liste ===== */
-function renderList(){
-  fileListEl.innerHTML='';
-  files.forEach((f,i)=>{
-    const row=document.createElement('div');
-    row.className='file-row';
-    row.innerHTML = `<div>${escapeHtml(f.name)} <span class="status">• ${bytesToSize(f.size)}</span></div>`;
-    const del=document.createElement('button');
-    del.className='btn ghost';
-    del.textContent='Supprimer';
-    del.onclick=()=>{ files.splice(i,1); renderList(); };
-    row.appendChild(del);
-    fileListEl.appendChild(row);
-  });
+// Convert to base64
+function bufToB64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function b64ToBuf(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 }
 
-/* ===== Chargement fichiers ===== */
-function handleFilesList(fileList){
-  const thresholdMB = Number(threshold.value) || 50;
-  const toRead = []; const excluded=[];
-  Array.from(fileList).forEach(f=>{
-    if(skipLarge.checked && f.size > thresholdMB*1024*1024) excluded.push(f);
-    else toRead.push(f);
-  });
-  if(excluded.length) alert('Fichiers exclus (> '+thresholdMB+' MB): '+excluded.map(x=>x.name).join(', '));
-  if(toRead.length===0) return;
-
-  setProgress(0,'Lecture fichiers...');
-  const total = toRead.reduce((s,f)=>s+f.size,0); let loaded=0;
-  const promises = toRead.map(f=> new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload = ()=>{
-      files.push({name:f.name,type:f.type,size:f.size,content:r.result});
-      loaded+=f.size;
-      setProgress(Math.round((loaded/total)*100),'Lecture globale');
-      res();
-    };
-    r.onerror = ()=>rej(r.error);
-    r.readAsDataURL(f);
-  }));
-
-  Promise.all(promises)
-    .then(()=>{ renderList(); setProgress(100,'Lecture terminée'); setTimeout(()=>setProgress(0,'Aucune opération en cours'),700); })
-    .catch(e=>{ console.error(e); setProgress(0,'Erreur de lecture'); alert('Erreur lors de la lecture des fichiers.'); });
+// Hash SHA-256
+async function sha256(data) {
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2,"0"))
+    .join("");
 }
 
-/* ===== Drag & drop ===== */
-dropArea.addEventListener('dragover', e=>{ e.preventDefault(); dropArea.classList.add('active'); });
-dropArea.addEventListener('dragleave', ()=> dropArea.classList.remove('active'));
-dropArea.addEventListener('drop', e=>{
-  e.preventDefault(); dropArea.classList.remove('active');
-  if(e.dataTransfer.files && e.dataTransfer.files.length) handleFilesList(e.dataTransfer.files);
-});
-pickBtn.addEventListener('click', ()=> fileInput.click());
-fileInput.addEventListener('change', e=>{
-  if(e.target.files.length) handleFilesList(e.target.files);
-  fileInput.value='';
-});
-
-/* ===== Crypto: PBKDF2 -> AES-GCM ===== */
-async function deriveKey(password, salt, usages=['encrypt','decrypt']){
-  const enc=new TextEncoder();
-  const km=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
+// Crypto AES-GCM
+async function deriveKey(password, salt) {
+  const keyMat = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]
+  );
   return crypto.subtle.deriveKey(
-    {name:'PBKDF2', salt, iterations:150000, hash:'SHA-256'},
-    km,
-    {name:'AES-GCM', length:256},
-    false, usages
+    { name:"PBKDF2", salt, iterations:100000, hash:"SHA-256" },
+    keyMat,
+    { name:"AES-GCM", length:256 },
+    false,
+    ["encrypt","decrypt"]
   );
 }
-function u8ToB64(u8){ let s=''; for(let i=0;i<u8.length;i++) s+=String.fromCharCode(u8[i]); return btoa(s); }
-function b64ToU8(b64){ const bin=atob(b64); const u8=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i); return u8; }
 
-/* Per-file encryption */
-async function encryptDataURLPerFile(dataURL, password){
-  const [meta,b64] = dataURL.split(',');
-  const raw = b64ToU8(b64);
+async function encryptData(password, data) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(password, salt);
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, raw);
-  return { meta, salt: u8ToB64(salt), iv: u8ToB64(iv), ciphertext: u8ToB64(new Uint8Array(ct)) };
-}
-async function decryptPerFileObject(obj, password){
-  const salt=b64ToU8(obj.salt);
-  const iv=b64ToU8(obj.iv);
-  const ct=b64ToU8(obj.ciphertext);
-  const key = await deriveKey(password, salt);
-  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
-  const u8=new Uint8Array(plain);
-  return obj.meta + ',' + u8ToB64(u8);
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(password, salt);
+  const ct   = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, data);
+  return { salt: bufToB64(salt), iv: bufToB64(iv), ct: bufToB64(ct) };
 }
 
-/* Archive encryption (tout en un) */
-async function encryptArchive(jsonString, password){
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(password, salt);
-  setProgress(0,"Chiffrement...");
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(jsonString));
-  setProgress(100,"Chiffrement terminé");
-  return { mode:'archive', salt: u8ToB64(salt), iv: u8ToB64(iv), ciphertext: u8ToB64(new Uint8Array(ct)) };
-}
-async function decryptArchive(obj, password){
-  const salt=b64ToU8(obj.salt);
-  const iv=b64ToU8(obj.iv);
-  const ct=b64ToU8(obj.ciphertext);
-  const key = await deriveKey(password, salt);
-  setProgress(0,"Déchiffrement...");
-  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
-  setProgress(100,"Déchiffrement terminé");
-  return JSON.parse(new TextDecoder().decode(plain));
+async function decryptData(password, saltB64, ivB64, ctB64) {
+  const salt = b64ToBuf(saltB64);
+  const iv   = b64ToBuf(ivB64);
+  const key  = await deriveKey(password, salt);
+  return crypto.subtle.decrypt({name:"AES-GCM", iv}, key, b64ToBuf(ctB64));
 }
 
-/* ===== Sauvegarde ===== */
-saveBtn.addEventListener('click', ()=>{
-  if(files.length===0) return alert('Aucun fichier');
-  const payload = {
-    createdAt:new Date().toISOString(),
-    mode:'plain',
-    files: files.map(f=>({name:f.name,type:f.type,size:f.size,content:f.content}))
-  };
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`backup-plain-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  saveLocalMeta();
+// ---------------- ZIP ----------------
+async function makeZip(files) {
+  const zip = new JSZip();
+  for (let f of files) {
+    zip.file(f.name, f);
+  }
+  return await zip.generateAsync({type:"uint8array"});
+}
+
+// ---------------- UI ----------------
+const dropZone = document.getElementById("drop-zone");
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+let selectedFiles = [];
+
+dropZone.addEventListener("click", ()=>fileInput.click());
+dropZone.addEventListener("dragover", e=>{
+  e.preventDefault();
+  dropZone.classList.add("hover");
 });
+dropZone.addEventListener("dragleave", ()=>dropZone.classList.remove("hover"));
+dropZone.addEventListener("drop", e=>{
+  e.preventDefault();
+  dropZone.classList.remove("hover");
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener("change", ()=>handleFiles(fileInput.files));
 
-saveEncBtn.addEventListener('click', async ()=>{
-  if(files.length===0) return alert('Aucun fichier');
-  const pwd=passwordInput.value||'';
-  if(!pwd && !confirm('Aucun mot de passe renseigné — continuer ?')) return;
+function handleFiles(files) {
+  selectedFiles = [...files];
+  preview.innerHTML = "";
+  selectedFiles.forEach(f=>{
+    preview.innerHTML += `<p>${f.name} - ${(f.size/1024).toFixed(1)} KB</p>`;
+  });
+}
 
-  setProgress(0,'Préparation...');
-  if(encPerFile.checked){
-    const out={mode:'per-file',createdAt:new Date().toISOString(),files:[]};
-    try{
-      for(let i=0;i<files.length;i++){
-        const f=files[i];
-        setProgress(Math.round((i/files.length)*90),`Chiffrement ${f.name} (${i+1}/${files.length})`);
-        const enc=await encryptDataURLPerFile(f.content,pwd);
-        out.files.push({name:f.name,type:f.type,size:f.size,encrypted:enc});
-      }
-      setProgress(100,'Terminé');
-      const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download=`backup-perfile-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-      a.click(); URL.revokeObjectURL(a.href);
-      saveLocalMeta();
-      setTimeout(()=>setProgress(0,'Aucune opération en cours'),800);
-    }catch(e){
-      console.error(e); alert('Erreur chiffrement'); setProgress(0,'Erreur');
-    }
+// ---------------- SAUVEGARDE ----------------
+document.getElementById("saveBtn").addEventListener("click", async ()=>{
+  if(!selectedFiles.length) return alert("Aucun fichier");
+  const password = document.getElementById("password").value;
+  if(!password) return alert("Mot de passe requis");
+
+  let data, fileName;
+  if(document.getElementById("enableZip").checked){
+    data = await makeZip(selectedFiles);
+    fileName = "backup.zip";
+    log("Fichiers compressés en ZIP.");
   } else {
-    const payload={createdAt:new Date().toISOString(),mode:'plain-archive',files:files.map(f=>({name:f.name,type:f.type,size:f.size,content:f.content}))};
-    try{
-      const enc=await encryptArchive(JSON.stringify(payload),pwd);
-      const blob=new Blob([JSON.stringify(enc,null,2)],{type:'application/json'});
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob);
-      a.download=`backup-archive-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-      a.click(); URL.revokeObjectURL(a.href);
-      saveLocalMeta();
-      setTimeout(()=>setProgress(0,'Aucune opération en cours'),800);
-    }catch(e){
-      console.error(e); alert('Erreur'); setProgress(0,'Erreur');
+    const content = {};
+    for(let f of selectedFiles){
+      const buf = await f.arrayBuffer();
+      content[f.name] = bufToB64(buf);
     }
+    data = new TextEncoder().encode(JSON.stringify(content));
+    fileName = "backup.json";
   }
+
+  let hash = null;
+  if(document.getElementById("addHash").checked){
+    hash = await sha256(data);
+    log("Hash SHA-256: " + hash);
+  }
+
+  // Chiffrement
+  const enc = await encryptData(password, data);
+
+  const final = {
+    meta: { ts: Date.now(), hash },
+    enc
+  };
+
+  const blob = new Blob([JSON.stringify(final)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "sauvegarde.secure.json";
+  a.click();
+  log("Sauvegarde terminée !");
 });
 
-/* ===== Restauration ===== */
-restoreBtn.addEventListener('click', async ()=>{
-  const f = backupInput.files?.[0];
-  if(!f) return alert('Choisir un JSON de sauvegarde');
-  let parsed;
-  try{ parsed = JSON.parse(await f.text()); }catch{ return alert('JSON invalide'); }
+// ---------------- RESTAURATION ----------------
+document.getElementById("restoreBtn").addEventListener("click", ()=> {
+  document.getElementById("restoreInput").click();
+});
+document.getElementById("restoreInput").addEventListener("change", async e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const text = await f.text();
+  const json = JSON.parse(text);
+  const password = prompt("Mot de passe ?");
+  try {
+    const plain = await decryptData(password, json.enc.salt, json.enc.iv, json.enc.ct);
 
-  // Non chiffré (liste ou archive plain-archive)
-  if(parsed.mode === 'plain'){ showRestored(parsed.files); return; }
-  if(parsed.mode === 'plain-archive' && parsed.files){ showRestored(parsed.files); return; }
-
-  // Par-fichier chiffré
-  if(parsed.mode === 'per-file' && Array.isArray(parsed.files)){
-    const pwd=passwordDecrypt.value||'';
-    try{
-      const out=[];
-      for(let i=0;i<parsed.files.length;i++){
-        const pf=parsed.files[i];
-        setProgress(Math.round((i/parsed.files.length)*80),`Déchiffrement ${pf.name}`);
-        const dataURL = await decryptPerFileObject(pf.encrypted, pwd);
-        out.push({name:pf.name,type:pf.type,size:pf.size,content:dataURL});
+    // Vérif hash
+    if(json.meta.hash){
+      const computed = await sha256(new Uint8Array(plain));
+      if(computed !== json.meta.hash){
+        log("⚠️ Hash invalide ! Fichier corrompu.");
+      } else {
+        log("✅ Hash vérifié, intégrité OK.");
       }
-      setProgress(100,'Terminé'); showRestored(out);
-      setTimeout(()=>setProgress(0,'Aucune opération en cours'),800);
-    }catch(e){
-      console.error(e); alert('Erreur déchiffrement (mot de passe ?)'); setProgress(0,'Erreur');
     }
-    return;
+
+    log("Restauration réussie !");
+  } catch(err){
+    log("Erreur de déchiffrement: " + err.message);
   }
-
-  // Archive chiffrée (salt+iv+ciphertext)
-  if(parsed.salt && parsed.iv && parsed.ciphertext){
-    const pwd=passwordDecrypt.value||'';
-    try{
-      const payload = await decryptArchive(parsed, pwd);
-      if(payload && payload.files) showRestored(payload.files);
-      else alert('Format inattendu');
-    }catch(e){
-      console.error(e); alert('Impossible de déchiffrer — mot de passe incorrect ?');
-      setProgress(0,'Erreur');
-    }
-    return;
-  }
-
-  alert('Format de sauvegarde non reconnu.');
 });
-
-function showRestored(list){
-  restoredList.innerHTML='';
-  list.forEach(f=>{
-    const d=document.createElement('div'); d.className='file-row';
-    d.innerHTML = `<div>${escapeHtml(f.name)} <span class="status">• ${bytesToSize(f.size||0)}</span></div>`;
-    const a=document.createElement('a'); a.href=f.content; a.download=f.name; a.textContent='Télécharger'; a.className='btn';
-    d.appendChild(a); restoredList.appendChild(d);
-  });
-}
-
-/* ===== Divers ===== */
-clearBtn.addEventListener('click', ()=>{
-  if(confirm('Vider la liste ?')){ files=[]; renderList(); }
-});
-showMetaBtn.addEventListener('click', ()=>{
-  const raw=localStorage.getItem('last_backup_meta');
-  if(!raw) return alert('Aucune méta locale');
-  const m=JSON.parse(raw);
-  alert(`Dernière sauvegarde:\nDate: ${m.createdAt}\nFichiers: ${m.count}\nTaille: ${bytesToSize(m.totalSize)}`);
-});
-
-/* ===== PWA (enregistrement SW + prompt install) ===== */
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js')
-    .then(()=>console.log('Service worker enregistré'))
-    .catch(e=>console.warn('Service worker échec', e));
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    // On pourrait afficher un bouton "Installer" custom ici.
-    document.querySelector('.status').textContent = 'Prête à être installée (menu du navigateur).';
-  });
-}
