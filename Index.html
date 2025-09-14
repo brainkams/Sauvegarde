@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Scorpion BKMS - Accueil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+  <header>
+    <h1>🦂 Scorpion BKMS</h1>
+    <nav>
+      <a href="index.html">Accueil</a>
+      <a href="messages.html">Messages</a>
+      <a href="notifications.html">Notifications</a>
+      <a href="groupes.html">Groupes</a>
+      <a href="amis.html">Amis</a>
+      <a href="parametres.html">Paramètres</a>
+      <a href="contact.html">Contact</a>
+      <a href="login.html">Connexion</a>
+      <a href="register.html">Inscription</a>
+    </nav>
+    <button class="theme-toggle" onclick="toggleTheme()">🌗 Mode sombre</button>
+  </header>
+
+  <main>
+    <section>
+      <h2>Bienvenue sur Scorpion BKMS 🦂</h2>
+      <p>Une plateforme interactive, fun et colorée pour discuter, créer des groupes, partager des moments avec tes amis et recevoir des notifications en direct !</p>
+    </section>
+
+    <section class="carousel-container">
+      <div class="carousel" id="carousel">
+        <div class="carousel-item fade-in">
+          <h3>Nouveau message dans "Groupe Amis"</h3>
+          <p>Alice a partagé une photo dans le groupe. Clique pour voir !</p>
+        </div>
+        <div class="carousel-item">
+          <h3>Nouvel ami ajouté</h3>
+          <p>Bob vient de rejoindre tes amis. Envoie-lui un message !</p>
+        </div>
+        <div class="carousel-item">
+          <h3>Événement à venir</h3>
+          <p>Soirée jeux prévue ce vendredi dans le groupe "Fun BKMS".</p>
+        </div>
+      </div>
+      <div class="carousel-controls">
+        <button onclick="prevSlide()">❮</button>
+        <button onclick="nextSlide()">❯</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Activités Distantes 🔐</h2>
+      <button onclick="launchRiddle()">Chasse au trésor</button>
+      <button onclick="simulatePhishing()">Simulation d’hameçonnage</button>
+      <button onclick="reportThreat()">Mur de menaces</button>
+      <button onclick="startVoiceQuiz()">Quiz vocal</button>
+      <button onclick="launchScan()">Scan collaboratif</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 Scorpion BKMS - Tous droits réservés.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+                                                                     </html>
