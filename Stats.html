@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Statistiques</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .chart-container {
+      width: 80%;
+      max-width: 800px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    canvas {
+      width: 100% !important;
+      height: 400px !important;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Accueil</a> |
+    <a href="quiz.html">Quiz</a> |
+    <a href="contact.html">Contact</a> |
+    <a href="about.html">À propos</a> |
+    <a href="faq.html">FAQ</a> |
+    <a href="blog.html">Blog</a> |
+    <a href="dashboard.html">Dashboard</a> |
+    <a href="profil.html">Profil</a> |
+    <a href="parametres.html">Paramètres</a> |
+    <a href="notifications.html">Notifications</a> |
+    <a href="messages.html">Messagerie</a> |
+    <a href="admin.html">Administration</a> |
+    <a href="stats.html">Statistiques</a> |
+    <a href="#" onclick="logout()">Déconnexion</a><a href="logout.html">Messagerie</a> |
+  </nav>
+
+  <div class="container">
+    <h2>📊 Statistiques de l’application</h2>
+
+    <div class="chart-container">
+      <h3>🎯 Score moyen des Quiz</h3>
+      <canvas id="quizChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>📅 Connexions par jour</h3>
+      <canvas id="loginChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h3>👥 Répartition des utilisateurs</h3>
+      <canvas id="userChart"></canvas>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 - Mon App Interactive
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Vérifie si connecté
+    const user = localStorage.getItem("userName");
+    if (!user) {
+      alert("⚠️ Vous devez être connecté pour voir les statistiques !");
+      window.location.href = "login.html";
+    }
+
+    // === Graphique Quiz ===
+    new Chart(document.getElementById("quizChart"), {
+      type: "bar",
+      data: {
+        labels: ["Alice", "Bob", "Charlie", "Admin"],
+        datasets: [{
+          label: "Score (%)",
+          data: [80, 65, 90, 75],
+          backgroundColor: ["#3498db", "#9b59b6", "#2ecc71", "#e67e22"]
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true, max: 100 }
+        }
+      }
+    });
+
+    // === Graphique Connexions ===
+    new Chart(document.getElementById("loginChart"), {
+      type: "line",
+      data: {
+        labels: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
+        datasets: [{
+          label: "Connexions",
+          data: [5, 8, 4, 10, 6, 12, 7],
+          fill: false,
+          borderColor: "#e74c3c",
+          tension: 0.3
+        }]
+      },
+      options: { responsive: true }
+    });
+
+    // === Graphique Répartition Utilisateurs ===
+    new Chart(document.getElementById("userChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Admins", "Utilisateurs", "Visiteurs"],
+        datasets: [{
+          data: [1, 12, 5],
+          backgroundColor: ["#f39c12", "#2980b9", "#95a5a6"]
+        }]
+      },
+      options: { responsive: true }
+    });
+  </script>
+</body>
+</html>
