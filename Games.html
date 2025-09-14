@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini-Jeux</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .game-section {
+      margin: 30px 0;
+      padding: 20px;
+      border-radius: 12px;
+      background: #f9f9f9;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    h3 {
+      margin-bottom: 15px;
+      color: #3498db;
+    }
+    .btn {
+      padding: 10px 15px;
+      margin: 5px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #3498db;
+      color: white;
+    }
+    .btn:hover { background: #2980b9; }
+
+    /* Morpion */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 80px);
+      grid-gap: 5px;
+      margin-top: 15px;
+    }
+    .cell {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border: 2px solid #ccc;
+      font-size: 24px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .cell.taken {
+      pointer-events: none;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Accueil</a> |
+    <a href="quiz.html">Quiz</a> |
+    <a href="contact.html">Contact</a> |
+    <a href="about.html">À propos</a> |
+    <a href="faq.html">FAQ</a> |
+    <a href="blog.html">Blog</a> |
+    <a href="dashboard.html">Dashboard</a> |
+    <a href="profil.html">Profil</a> |
+    <a href="parametres.html">Paramètres</a> |
+    <a href="notifications.html">Notifications</a> |
+    <a href="messages.html">Messagerie</a> |
+    <a href="admin.html">Administration</a> |
+    <a href="stats.html">Statistiques</a> |
+    <a href="games.html">Mini-Jeux</a> |
+    <a href="#" onclick="logout()">Déconnexion</a>
+    <a href="conversations.html">Messagerie</a> |
+  </nav>
+
+  <div class="container">
+    <h2>🎮 Mini-Jeux</h2>
+
+    <!-- Jeu 1 : Pierre - Feuille - Ciseaux -->
+    <div class="game-section">
+      <h3>✊✋✌️ Pierre - Feuille - Ciseaux</h3>
+      <button class="btn" onclick="playRPS('pierre')">Pierre</button>
+      <button class="btn" onclick="playRPS('feuille')">Feuille</button>
+      <button class="btn" onclick="playRPS('ciseaux')">Ciseaux</button>
+      <p id="rpsResult">Faites votre choix !</p>
+    </div>
+
+    <!-- Jeu 2 : Morpion -->
+    <div class="game-section">
+      <h3>⭕❌ Morpion (Tic Tac Toe)</h3>
+      <div class="board" id="board"></div>
+      <p id="tttResult">Tour : X</p>
+      <button class="btn" onclick="resetTTT()">🔄 Rejouer</button>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 - Mon App Interactive
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Vérifie connexion
+    const user = localStorage.getItem("userName");
+    if (!user) {
+      alert("⚠️ Connectez-vous pour accéder aux mini-jeux !");
+      window.location.href = "login.html";
+    }
+
+    // === Jeu 1 : Pierre-Feuille-Ciseaux ===
+    function playRPS(playerChoice) {
+      const choices = ["pierre", "feuille", "ciseaux"];
+      const botChoice = choices[Math.floor(Math.random() * 3)];
+      let result = "";
+
+      if (playerChoice === botChoice) {
+        result = "🤝 Égalité !";
+      } else if (
+        (playerChoice === "pierre" && botChoice === "ciseaux") ||
+        (playerChoice === "feuille" && botChoice === "pierre") ||
+        (playerChoice === "ciseaux" && botChoice === "feuille")
+      ) {
+        result = `✅ Gagné ! ${playerChoice} bat ${botChoice}`;
+      } else {
+        result = `❌ Perdu ! ${botChoice} bat ${playerChoice}`;
+      }
+
+      document.getElementById("rpsResult").textContent = result;
+    }
+
+    // === Jeu 2 : Morpion ===
+    let currentPlayer = "X";
+    let board = ["", "", "", "", "", "", "", "", ""];
+    const boardDiv = document.getElementById("board");
+    const resultDiv = document.getElementById("tttResult");
+
+    function drawBoard() {
+      boardDiv.innerHTML = "";
+      board.forEach((cell, index) => {
+        const div = document.createElement("div");
+        div.classList.add("cell");
+        if (cell) {
+          div.textContent = cell;
+          div.classList.add("taken");
+        } else {
+          div.onclick = () => makeMove(index);
+        }
+        boardDiv.appendChild(div);
+      });
+    }
+
+    function makeMove(index) {
+      if (!board[index]) {
+        board[index] = currentPlayer;
+        if (checkWinner()) {
+          resultDiv.textContent = `🎉 ${currentPlayer} a gagné !`;
+          board = board.map(c => c || "-"); // bloque le plateau
+        } else if (!board.includes("")) {
+          resultDiv.textContent = "🤝 Match nul !";
+        } else {
+          currentPlayer = currentPlayer === "X" ? "O" : "X";
+          resultDiv.textContent = `Tour : ${currentPlayer}`;
+        }
+        drawBoard();
+      }
+    }
+
+    function checkWinner() {
+      const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      return wins.some(([a,b,c]) => board[a] && board[a] === board[b] && board[a] === board[c]);
+    }
+
+    function resetTTT() {
+      board = ["", "", "", "", "", "", "", "", ""];
+      currentPlayer = "X";
+      resultDiv.textContent = "Tour : X";
+      drawBoard();
+    }
+
+    // Dessine le plateau au chargement
+    drawBoard();
+  </script>
+</body>
+  </html>
