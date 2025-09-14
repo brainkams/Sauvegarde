@@ -1,0 +1,182 @@
+/* 🌐 Base générale */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f5f5;
+  color: #222;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+main {
+  padding: 1rem;
+}
+
+/* 🌗 Thèmes dynamiques */
+body.dark-mode {
+  background-color: #0f111a;
+  color: #e0e0ff;
+}
+
+body.chantier-mode {
+  background-color: #fffbe6;
+  color: #222;
+}
+
+/* 🧱 Header */
+header {
+  background-color: #222;
+  color: #fff;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+body.dark-mode header {
+  background: linear-gradient(90deg, #1f1f3a, #3a3a6f);
+}
+
+body.chantier-mode header {
+  background-color: #ff5722;
+}
+
+/* 🔗 Navigation */
+nav a {
+  margin: 0 0.5rem;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* 🎛️ Boutons et sélecteurs */
+button,
+select,
+.theme-toggle {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #ffcc00;
+  color: #222;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #ffd633;
+}
+
+/* 🧠 Quiz + Cards + Carrousel */
+.quiz-block,
+.card,
+.carousel-item {
+  background-color: #fff;
+  color: #222;
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+body.dark-mode .quiz-block,
+body.dark-mode .card,
+body.dark-mode .carousel-item {
+  background-color: #1c1c2e;
+  color: #e0e0ff;
+  border: 1px solid #333366;
+}
+
+body.chantier-mode .quiz-block,
+body.chantier-mode .card,
+body.chantier-mode .carousel-item {
+  background-color: #fff3e0;
+  border: 2px dashed #ff9800;
+  font-size: 1.1rem;
+}
+
+/* 📊 Résultat Quiz */
+#result {
+  background-color: #e3f2fd;
+  padding: 1rem;
+  margin-top: 1rem;
+  border-left: 5px solid #2196f3;
+  border-radius: 6px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+body.dark-mode #result {
+  background-color: #222244;
+  color: #fff;
+  border-left: 5px solid #ffcc00;
+}
+
+body.chantier-mode #result {
+  background-color: #fff8e1;
+  border-left: 5px solid #ff9800;
+}
+
+#result h2 {
+  color: #0d47a1;
+}
+
+/* 📋 Listes dans dashboard */
+.card ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.card ul li {
+  margin: 0.5rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.card ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #ffcc00;
+}
+
+/* 🎠 Carrousel contrôles */
+.carousel-controls {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.carousel-controls button {
+  background-color: #333366;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  margin: 0.5rem;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* ✨ Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 📦 Footer */
+footer {
+  background-color: #eee;
+  color: #555;
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+body.dark-mode footer {
+  background-color: #1f1f3a;
+  color: #aaa;
+}
+
+body.chantier-mode footer {
+  background-color: #ffe0b2;
+  color: #333;
+}
