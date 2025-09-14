@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Administration</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #f9f9f9;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .success {
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Accueil</a> |
+    <a href="quiz.html">Quiz</a> |
+    <a href="contact.html">Contact</a> |
+    <a href="about.html">À propos</a> |
+    <a href="faq.html">FAQ</a> |
+    <a href="blog.html">Blog</a> |
+    <a href="dashboard.html">Dashboard</a> |
+    <a href="profil.html">Profil</a> |
+    <a href="settings.html">Paramètres</a> |
+    <a href="notifications.html">Notifications</a> |
+    <a href="messages.html">Messagerie</a> |
+    <a href="admin.html">Administration</a> |
+    <a href="#" onclick="logout()">Déconnexion</a>
+    <a href="conversations.html">Messagerie</a> |
+  </nav>
+
+  <div class="container">
+    <h2>⚙️ Panneau d’administration</h2>
+
+    <!-- Section Notifications -->
+    <div class="admin-section">
+      <h3>📢 Ajouter une notification</h3>
+      <label for="notifType">Type :</label>
+      <select id="notifType">
+        <option value="success">Succès</option>
+        <option value="error">Erreur</option>
+        <option value="warning">Avertissement</option>
+        <option value="info">Info</option>
+      </select>
+
+      <label for="notifMessage">Message :</label>
+      <input type="text" id="notifMessage" placeholder="Votre notification...">
+
+      <button onclick="addNotification()">Ajouter</button>
+      <p id="notifResult"></p>
+    </div>
+
+    <!-- Section Messages -->
+    <div class="admin-section">
+      <h3>📩 Envoyer un message</h3>
+      <label for="msgFrom">Expéditeur :</label>
+      <input type="text" id="msgFrom" placeholder="Ex: Admin">
+
+      <label for="msgSubject">Sujet :</label>
+      <input type="text" id="msgSubject" placeholder="Sujet du message">
+
+      <label for="msgBody">Contenu :</label>
+      <textarea id="msgBody" placeholder="Texte du message"></textarea>
+
+      <button onclick="sendMessage()">Envoyer</button>
+      <p id="msgResult"></p>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 - Mon App Interactive
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Vérification "admin"
+    const user = localStorage.getItem("userName");
+    if (!user || user.toLowerCase() !== "admin") {
+      alert("⛔ Accès réservé à l'administrateur !");
+      window.location.href = "index.html";
+    }
+
+    // Ajouter une notification
+    function addNotification() {
+      const type = document.getElementById("notifType").value;
+      const message = document.getElementById("notifMessage").value.trim();
+
+      if (!message) {
+        document.getElementById("notifResult").textContent = "⚠️ Veuillez entrer un message.";
+        return;
+      }
+
+      let notifs = JSON.parse(localStorage.getItem("notifications")) || [];
+      notifs.push({ type, message });
+      localStorage.setItem("notifications", JSON.stringify(notifs));
+
+      document.getElementById("notifResult").textContent = "✅ Notification ajoutée avec succès.";
+      document.getElementById("notifMessage").value = "";
+    }
+
+    // Envoyer un message
+    function sendMessage() {
+      const from = document.getElementById("msgFrom").value.trim() || "Admin";
+      const subject = document.getElementById("msgSubject").value.trim();
+      const body = document.getElementById("msgBody").value.trim();
+
+      if (!subject || !body) {
+        document.getElementById("msgResult").textContent = "⚠️ Veuillez remplir tous les champs.";
+        return;
+      }
+
+      let msgs = JSON.parse(localStorage.getItem("messages")) || [];
+      msgs.push({ id: Date.now(), from, subject, body });
+      localStorage.setItem("messages", JSON.stringify(msgs));
+
+      document.getElementById("msgResult").textContent = "✅ Message envoyé avec succès.";
+      document.getElementById("msgSubject").value = "";
+      document.getElementById("msgBody").value = "";
+    }
+  </script>
+</body>
+  </html>
