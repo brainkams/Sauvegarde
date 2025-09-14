@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Blog</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .blog-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .post {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 15px;
+      background: #fff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .post:hover {
+      transform: scale(1.02);
+    }
+    .post h3 {
+      margin-top: 0;
+      color: #3498db;
+    }
+    .post p {
+      color: #555;
+    }
+    .post a {
+      display: inline-block;
+      margin-top: 10px;
+      color: #2ecc71;
+      text-decoration: none;
+    }
+    .post a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Accueil</a> |
+    <a href="quiz.html">Quiz</a> |
+    <a href="contact.html">Contact</a> |
+    <a href="about.html">À propos</a> |
+    <a href="faq.html">FAQ</a> |
+    <a href="blog.html">Blog</a> |
+    <a href="profil.html">Profil</a> |
+    <a href="register.html">Inscription</a> |
+    <a href="login.html">Connexion</a>
+    <a href="conversations.html">Messagerie</a> |
+  </nav>
+
+  <div class="container">
+    <h2>📰 Blog</h2>
+    <div class="blog-container">
+      <div class="post">
+        <h3>🚀 Bienvenue sur notre nouvelle app</h3>
+        <p>Découvrez les fonctionnalités de la première version et comment profiter pleinement de votre expérience.</p>
+        <a href="#">Lire plus</a>
+      </div>
+
+      <div class="post">
+        <h3>📘 Apprendre en s’amusant</h3>
+        <p>Pourquoi les quiz interactifs sont-ils un excellent moyen de renforcer ses connaissances ?</p>
+        <a href="#">Lire plus</a>
+      </div>
+
+      <div class="post">
+        <h3>🌍 La communauté grandit</h3>
+        <p>Rejoignez une communauté d’apprenants motivés qui partagent leurs astuces et progressent ensemble.</p>
+        <a href="#">Lire plus</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 - Mon App Interactive
+  </footer>
+</body>
+</html>
