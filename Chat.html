@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat en direct</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .chat-container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    .messages {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      background: white;
+      margin-bottom: 15px;
+    }
+    .msg {
+      margin: 5px 0;
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .me {
+      background: #3498db;
+      color: white;
+      margin-left: auto;
+      text-align: right;
+    }
+    .other {
+      background: #ecf0f1;
+      color: #2c3e50;
+      text-align: left;
+    }
+    .chat-input {
+      display: flex;
+      gap: 10px;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .chat-input button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #2ecc71;
+      color: white;
+      cursor: pointer;
+    }
+    .chat-input button:hover {
+      background: #27ae60;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Accueil</a> |
+    <a href="quiz.html">Quiz</a> |
+    <a href="contact.html">Contact</a> |
+    <a href="about.html">À propos</a> |
+    <a href="faq.html">FAQ</a> |
+    <a href="blog.html">Blog</a> |
+    <a href="dashboard.html">Dashboard</a> |
+    <a href="profil.html">Profil</a> |
+    <a href="parametres.html">Paramètres</a> |
+    <a href="notifications.html">Notifications</a> |
+    <a href="messages.html">Messagerie</a> |
+    <a href="admin.html">Administration</a> |
+    <a href="stats.html">Statistiques</a> |
+    <a href="games.html">Mini-Jeux</a> |
+    <a href="chat.html">Chat</a> |
+    <a href="#" onclick="logout()">Déconnexion</a>
+    <a href="conversations.html">Messagerie</a> |
+  </nav>
+
+  <div class="container">
+    <h2>💬 Chat en direct</h2>
+    <div class="chat-container">
+      <div class="messages" id="messagesBox"></div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Écrivez un message..." onkeypress="if(event.key==='Enter'){sendMessage()}">
+        <button onclick="sendMessage()">Envoyer</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 - Mon App Interactive
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Vérifie connexion
+    const user = localStorage.getItem("userName");
+    if (!user) {
+      alert("⚠️ Connectez-vous pour accéder au chat !");
+      window.location.href = "login.html";
+    }
+
+    // Charger messages existants
+    let chat = JSON.parse(localStorage.getItem("chat")) || [];
+    const box = document.getElementById("messagesBox");
+
+    function renderChat() {
+      box.innerHTML = "";
+      chat.forEach(msg => {
+        const div = document.createElement("div");
+        div.classList.add("msg");
+        div.classList.add(msg.user === user ? "me" : "other");
+        div.textContent = `${msg.user}: ${msg.text}`;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight; // auto-scroll
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      const message = { user, text, time: Date.now() };
+      chat.push(message);
+      localStorage.setItem("chat", JSON.stringify(chat));
+      input.value = "";
+      renderChat();
+    }
+
+    // Rafraîchit automatiquement toutes les 2s
+    setInterval(() => {
+      chat = JSON.parse(localStorage.getItem("chat")) || [];
+      renderChat();
+    }, 2000);
+
+    renderChat();
+  </script>
+</body>
+</html>
